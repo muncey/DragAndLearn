@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Drop and Learn</title>
+    <link rel="stylesheet" href="lib/flipclock.css" />
+    <script>
+        // constants
+        var TILE_WIDTH = 50;
+        var BOARD_NAMES = ['left', 'right'];
+    </script>
+    <script src="lib/jquery-2.1.3.min.js"></script>
+    <script src="game/data.js"></script>
+    <script src="game/boundrectmodel.js"></script>
+    <script src="game/gameboard.js"></script>
+    <script src="game/gameengine.js"></script>
+    <script>
+        var clock = null;
+        var counterHandle = null;
+        var currentBoardTemplate = board4x4;
+        var currentTemplateBoardName = 'left';
+
+        var nextBoard = function () {
+            var details = gameEngine.getGameDetails();
+
+            switch (details.CurrentLevel) {
+                case 'Board: 4x4':
+                    resetBoard(board4x4, 'right');
+                    break;
+                case 'Reversed: 4x4':
+                    resetBoard(board5x5, 'left');
+                    break;
+
+                case 'Board: 5x5':
+                    resetBoard(board5x5, 'right');
+                    break;
+                case 'Reversed: 5x5':
+                    resetBoard(board6x6, 'left');
+                    break;
+
+                case 'Board: 6x6':
+                    resetBoard(board6x6, 'right')
+                    break;
+                case 'Reversed: 6x6':
+                    resetBoard(board8x8, 'left')
+                    break;
+
+                case 'Board: 8x8':
+                    resetBoard(board8x8, 'right');
+                    break;
+                case 'Reversed: 8x8':
+                    resetBoard(board10x10, 'left');
+                    break;
+
+                case 'Board: 10x10':
+                    resetBoard(board10x10, 'right');
+                    break;
+                case 'Reversed: 10x10':
+                    resetBoard(board4x4, 'left')
+                    break;
+            }
+
+        }
+            
+        var resetBoard = function (boardTemplate, templateBoardName) {
+            currentBoardTemplate = boardTemplate;
+            currentTemplateBoardName = templateBoardName;
+            gameEngine.createBoard(boardTemplate, templateBoardName);
+
+            clock = $('.counter').FlipClock(boardTemplate.timeLimit, { clockFace: 'Counter' });
+            if (counterHandle != null) {
+                clearInterval(counterHandle);
+            }
+
+            setTimeout(function () {
+                counterHandle = setInterval(function () {
+                    clock.decrement();
+                    if (clock.getTime() == 0) {
+                        clearInterval(counterHandle);
+
+                        var details = gameEngine.getGameDetails();
+                        if (details.LevelScore < details.TotalScore) {
+                            nextBoard();                                
+                        }
+                    }
+                }, 1000);
+            });
+        }
+
+        $(document).ready(function () {
+
+            
+            gameEngine.init('mainCanvas');
+            $('#mainCanvas').on('changeDetail', function (e) {
+
+                var details = gameEngine.getGameDetails();
+
+                //Player: Score: Current level: 
+                $('#game_info').html('Player: ' + details.PlayerName + ' Score: ' + details.GameScore + ' Current level: ' + details.CurrentLevel);
+                if (details.LevelScore == details.TotalScore) {
+
+                    nextBoard();
+
+                    if (details.CurrentLevel == 'Reversed 10x10') {
+                        window.alert('Well done ' + details.PlayerName + ', you scored ' + details.GameScore);
+                        gameEngine.resetGameScore();
+                    }
+
+                }
+
+            });
+
+
+        });
+
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div id="game" style="display: none;">
+        <canvas id="mainCanvas" style="z-index: 1;"></canvas>
+        <div id="clouds">
+            <div class="cloud x1"></div>
+            <!--  Time for multiple clouds to dance around-->
+            <div class="cloud x2"></div>
+            <div class="cloud x3"></div>
+            <div class="cloud x4"></div>
+            <div class="cloud x5"></div>
+        </div>
+    </div>
+    <div id="wrapper" style="z-index: 1;">
+        <script src="lib/flipclock.min.js"></script>    
+        <div class="information" style="float:right; width: 90%;">
+            <form id="start_form" style="margin-top: 30px; text-align: center;">
+                <label>Please enter your name to start the game:</label>
+                <input type="text" name="player_name" id="player_name" />
+                <button id="start_game">Start Game</button>
+            </form>
+            <p id="game_info" style="display: none; margin-top: 30px; text-align: center;">Player: Score: Current level: </p>
+        </div>
+        <script type="text/javascript">
+            $('#start_game').click(function () {
+                var playerName = $('#player_name').val();
+
+                gameEngine.setPlayerName(playerName);
+
+                resetBoard(board4x4, 'left');
+                $('#game_info').html('Player: ' + playerName + ' Score: 0 Current level: Board 4x4');
+
+                $('#start_form').hide();
+                $('#game_info').show();
+
+                $('#game').show();
+
+                return false;
+                
+            });
+        </script>
+        <div class="counter" style="float:left; margin-top: -30px;"></div>
+        <div style="display:none">
+            <img id="maroon_tile" src="img/maroon_tile.png" draggable="true" />
+            <img id="white_tile" src="img/white_tile.png" draggable="true" />
+        </div>
+    </div>
+
+</body>
+</html>
